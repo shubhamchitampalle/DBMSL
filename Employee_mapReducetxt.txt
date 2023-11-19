@@ -1,0 +1,137 @@
+
+db.createCollection("Employee");
+
+db.Employee.insert([
+    {
+        "Name": { "FName": "John", "LName": "Doe" },
+        "Company_Name": "Infosys",
+        "Salary": 40000,
+        "Designation": "Programmer",
+        "Age": 28,
+        "Expertise": ["Java", "Python", "SQL"],
+        "DOB": "1995-01-15",
+        "Email_id": "john.doe@example.com",
+        "Contact": "9876543210",
+        "Address": [{ "PAddr": "123 Main St", "LAddr": "Apt 45" }]
+    },
+    {
+        "Name": { "FName": "Alice", "LName": "Smith" },
+        "Company_Name": "TCS",
+        "Salary": 35000,
+        "Designation": "Tester",
+        "Age": 25,
+        "Expertise": ["Testing", "Automation"],
+        "DOB": "1998-05-22",
+        "Email_id": "alice.smith@example.com",
+        "Contact": "8765432109",
+        "Address": [{ "PAddr": "456 Oak St", "LAddr": "Suite 12" }]
+    },
+    {
+        "Name": { "FName": "Bob", "LName": "Johnson" },
+        "Company_Name": "Infosys",
+        "Salary": 32000,
+        "Designation": "Programmer",
+        "Age": 30,
+        "Expertise": ["C++", "JavaScript", "Node.js"],
+        "DOB": "1992-08-10",
+        "Email_id": "bob.johnson@example.com",
+        "Contact": "7654321098",
+        "Address": [{ "PAddr": "789 Pine St", "LAddr": "Apt 8" }]
+    },
+    {
+        "Name": { "FName": "Eva", "LName": "White" },
+        "Company_Name": "TCS",
+        "Salary": 28000,
+        "Designation": "Tester",
+        "Age": 26,
+        "Expertise": ["Manual Testing", "Selenium"],
+        "DOB": "1997-03-18",
+        "Email_id": "eva.white@example.com",
+        "Contact": "6543210987",
+        "Address": [{ "PAddr": "101 Cedar St", "LAddr": "Unit 20" }]
+    },
+    {
+        "Name": { "FName": "Charlie", "LName": "Brown" },
+        "Company_Name": "Wipro",
+        "Salary": 42000,
+        "Designation": "Programmer",
+        "Age": 32,
+        "Expertise": ["Python", "Django", "MongoDB"],
+        "DOB": "1990-12-05",
+        "Email_id": "charlie.brown@example.com",
+        "Contact": "5432109876",
+        "Address": [{ "PAddr": "222 Maple St", "LAddr": "Floor 3" }]
+    }
+]);
+
+1: Display the total salary per company
+   -->  db.Employee.mapReduce(
+        function () {
+            emit(this.Company_Name, this.Salary);
+        },
+        function (key, values) {
+            return Array.sum(values);
+        },
+        { out: "TotalSalaryPerCompany", finalize: null }
+    );
+
+
+ 2: Display the total salary of company Name: "TCS"
+ -->   db.Employee.mapReduce(
+        function () {
+            if (this.Company_Name === "TCS") {
+                emit(this.Company_Name, this.Salary);
+            }
+        },
+        function (key, values) {
+            return Array.sum(values);
+        },
+        { out: "TotalSalaryTCS", finalize: null }
+    );
+
+
+ 3: Return the average salary of the company whose address is “Pune".
+ -->   db.Employee.mapReduce(
+        function () {
+            this.Address.forEach(function (addr) {
+                if (addr.PAddr === "Pune") {
+                    emit(this.Company_Name, this.Salary);
+                }
+            });
+        },
+        function (key, values) {
+            return Array.avg(values);
+        },
+        { out: "AverageSalaryPune", finalize: null }
+    );
+
+
+ 4: Display total count for “City=Pune”
+ --> db.Employee.mapReduce(
+        function () {
+            this.Address.forEach(function (addr) {
+                if (addr.PAddr === "Pune") {
+                    emit("City=Pune", 1);
+                }
+            });
+        },
+        function (key, values) {
+            return Array.sum(values);
+        },
+        { out: "TotalCountCityPune", finalize: null }
+    );
+
+
+ 5: Return count for city Pune and age greater than 40.
+-->db.Employee.mapReduce(
+    function () {
+        // Check if there is an address in Pune and age > 40
+        if (this.Address[0].PAddr === "Pune" && this.Age > 40) {
+            emit("City=Pune, Age>40", 1);
+        }
+    },
+    function (key, values) {
+        return Array.sum(values);
+    },
+    { out: "CountCityPuneAge40Plus_NoForEach_MR", finalize: null }
+);
